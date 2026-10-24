@@ -4,7 +4,7 @@ using System.Text;
 using System.Xml.Linq;
 using Microsoft.Win32;
 
-namespace ResetExplode;
+namespace AGBench;
 
 /// <summary>Família de chip USB-serial: como reconhecer o dispositivo e o pacote de driver, e onde baixar o oficial.</summary>
 /// <summary>Bundle = pasta em Drivers com o driver oficial embutido no .exe (null = não incluído).</summary>
@@ -26,7 +26,7 @@ public sealed class SerialDeviceRow
     public string State => Ok ? "FUNCIONANDO" : "COM PROBLEMA";
 }
 
-/// <summary>Driver oficial que vem dentro do RESET EXPLODE (pasta Drivers\ do projeto).</summary>
+/// <summary>Driver oficial que vem dentro do AG Bench (pasta Drivers\ do projeto).</summary>
 public sealed class BundledDriver
 {
     public SerialChip Chip { get; init; } = null!;
@@ -54,7 +54,7 @@ public sealed class SerialDriverPackage
 }
 
 /// <summary>
-/// RESET MAKER · drivers de CH340, CP210x, FTDI, Prolific e Arduino: diagnóstico pelo código de problema do Gerenciador de
+/// AG Bench MAKER · drivers de CH340, CP210x, FTDI, Prolific e Arduino: diagnóstico pelo código de problema do Gerenciador de
 /// Dispositivos, reinstalação do dispositivo, remoção de versões do driver (com backup) e instalação dos drivers oficiais embutidos no app.
 /// Tudo via pnputil e SetupAPI, que já vêm no Windows. Requer administrador.
 /// </summary>
@@ -121,7 +121,9 @@ public static class MakerDrivers
         {
             null => (true, d.Port != null ? $"Funcionando na {d.Port}" : "Funcionando", ""),
             28 => (false, "Sem driver (código 28)",
-                   "Instale o driver em DRIVERS INCLUÍDOS, logo abaixo. Se o chip não estiver lá, use PÁGINA OFICIAL."),
+                   BundleResources(chip).Count > 0
+                   ? "Instale o driver em DRIVERS INCLUÍDOS, logo abaixo. Se o chip não estiver lá, use PÁGINA OFICIAL."
+                   : "Use PÁGINA OFICIAL para baixar e instalar o driver do fabricante."),
             10 => (false, "O dispositivo não inicia (código 10)", chip.Name switch
             {
                 "CH340/CH341" => "Comum em clones do CH340 com a versão mais nova do driver. Tente REINSTALAR. Se continuar, remova a " +
@@ -197,6 +199,7 @@ public static class MakerDrivers
     // ------------------------------------------------------------------ drivers oficiais embutidos no .exe
 
     private const string ResPrefix = "Drivers/";
+    public static bool HasBundledDrivers => Chips.Any(c => BundleResources(c).Count > 0);
 
     /// <summary>Recursos embutidos de um chip (nomes "Drivers/CH340/CH341SER.INF"; RecursiveDir pode vir com "\").</summary>
     private static List<string> BundleResources(SerialChip c)
@@ -252,7 +255,7 @@ public static class MakerDrivers
     {
         var res = BundleResources(c);
         if (res.Count == 0) return $"O driver do {c.Name} não está incluído nesta versão.";
-        string dir = Path.Combine(Path.GetTempPath(), "ResetExplode", "drivers-incluidos", c.Bundle!);
+        string dir = Path.Combine(Path.GetTempPath(), "AGBench", "drivers-incluidos", c.Bundle!);
         if (Directory.Exists(dir)) Directory.Delete(dir, true);
         foreach (var n in res)
         {

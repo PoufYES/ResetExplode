@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace ResetExplode;
+namespace AGBench;
 
 /// <summary>Cartão de um jogo na aba Jogos.</summary>
 public sealed class GameRow : INotifyPropertyChanged

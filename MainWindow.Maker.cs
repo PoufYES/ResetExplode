@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Windows;
 
-namespace ResetExplode;
+namespace AGBench;
 
-/// <summary>Aba RESET MAKER · Drivers seriais: CH340, CP210x, FTDI, Prolific, Arduino e Arduino IDE.</summary>
+/// <summary>Aba AG Bench MAKER · Drivers seriais: CH340, CP210x, FTDI, Prolific, Arduino e Arduino IDE.</summary>
 public partial class MainWindow
 {
     private bool _makerInit, _makerBusy;
@@ -19,7 +19,8 @@ public partial class MainWindow
     private void MakerBusy(bool busy, string? status = null)
     {
         _makerBusy = busy;
-        BtnMakerScan.IsEnabled = BtnMakerBundleAll.IsEnabled = BtnMakerIde.IsEnabled = !busy;
+        BtnMakerScan.IsEnabled = BtnMakerIde.IsEnabled = !busy;
+        BtnMakerBundleAll.IsEnabled = !busy && MakerDrivers.HasBundledDrivers;
         if (status != null) MakerStatus.Text = status;
     }
 
@@ -53,6 +54,7 @@ public partial class MainWindow
         MakerPackages.ItemsSource = pkgs;
         MakerNoPackages.Visibility = pkgs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         MakerBundled.ItemsSource = MakerDrivers.Bundled(pkgs);
+        MakerBundledCard.Visibility = MakerDrivers.HasBundledDrivers ? Visibility.Visible : Visibility.Collapsed;
         BtnMakerRestore.IsEnabled = MakerDrivers.HasBackups;
     }
 
@@ -95,7 +97,7 @@ public partial class MainWindow
     private async void BtnMakerBundleAll_Click(object sender, RoutedEventArgs e)
     {
         if (_makerBusy || !RequireAdmin()) return;
-        var chips = MakerDrivers.Chips.Where(c => c.Bundle != null).ToList();
+        var chips = MakerDrivers.Bundled(Array.Empty<SerialDriverPackage>()).Select(b => b.Chip).ToList();
         await InstallBundledAsync(chips);
     }
 
@@ -122,7 +124,7 @@ public partial class MainWindow
                                 (p.InUse ? "Ele está EM USO por uma placa conectada: o Windows troca para outra versão guardada, " +
                                            "ou a placa fica sem driver se esta for a única.\n\n" : "") +
                                 "Um backup é feito antes; dá para desfazer em \"Restaurar removidos\".",
-                                "RESET MAKER", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                                "AG Bench MAKER", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) return;
         MakerBusy(true, $"Removendo {p.Title}…");
         try { MakerStatus.Text = await MakerDrivers.RemovePackageAsync(p); }
@@ -136,7 +138,7 @@ public partial class MainWindow
     private async void BtnMakerRestore_Click(object sender, RoutedEventArgs e)
     {
         if (_makerBusy || !RequireAdmin()) return;
-        var r = MessageBox.Show("Devolver ao Windows todos os drivers seriais removidos pelo RESET MAKER?", "RESET MAKER",
+        var r = MessageBox.Show("Devolver ao Windows todos os drivers seriais removidos pelo AG Bench MAKER?", "AG Bench MAKER",
                                 MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) return;
         MakerBusy(true, "Restaurando drivers…");
@@ -152,7 +154,7 @@ public partial class MainWindow
         if (_makerBusy) return;
         if (!AppInstaller.WingetAvailable)
         {
-            MakerIdeResult.Text = "O winget não foi encontrado: abra RESET FERRAMENTAS › Instalar apps para ver como resolver, ou baixe a IDE no site.";
+            MakerIdeResult.Text = "O winget não foi encontrado: abra AG Bench FERRAMENTAS › Instalar apps para ver como resolver, ou baixe a IDE no site.";
             return;
         }
         if (MakerDrivers.IdeRunning)
@@ -181,7 +183,7 @@ public partial class MainWindow
         if (procs.Count == 0) { MakerIdeResult.Text = "Nenhum programa conhecido prendendo portas COM."; RefreshMakerIde(); return; }
         var names = procs.Select(p => p.ProcessName).Distinct().ToList();
         var r = MessageBox.Show("Fechar estes programas? Trabalho não salvo neles pode ser perdido.\n\n" + string.Join("\n", names.Select(n => "  • " + n)),
-                                "RESET MAKER", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                                "AG Bench MAKER", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) return;
         int closed = 0;
         foreach (var p in procs)

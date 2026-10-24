@@ -1,4 +1,4 @@
-namespace ResetExplode;
+namespace AGBench;
 
 /// <summary>
 /// Jogo do catálogo. Valores de referência APROXIMADOS (compilados de benchmarks públicos) usados só

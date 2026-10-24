@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 
-namespace ResetExplode;
+namespace AGBench;
 
 /// <summary>
 /// Troca entre modo escuro e claro substituindo os pincéis da paleta (Theme.xaml). O XAML os referencia com DynamicResource,
@@ -23,6 +23,13 @@ public static class ThemeManager
         ("Muted", "#8C8C8C", "#3F3F3F"),
         ("Faint", "#4A4A4A", "#5C5C5C"),
         ("Ink", "#000000", "#FFFFFF"),
+        ("Accent", "#8BCB68", "#2B713E"),
+        ("AccentFill", "#78BA59", "#327644"),
+        ("AccentFillHover", "#8ACA6B", "#286638"),
+        ("AccentFillPressed", "#68A54B", "#20572E"),
+        ("AccentInk", "#10200D", "#FFFFFF"),
+        ("AccentSoft", "#18291C", "#E8F3E9"),
+        ("AccentBorder", "#4E8551", "#6B936C"),
         ("ThumbBrush", "#2E2E2E", "#CFCFCF"),
         ("ThumbHover", "#6A6A6A", "#A5A5A5"),
         ("ThumbDrag", "#9A9A9A", "#7A7A7A"),

@@ -1,0 +1,26 @@
+AG BENCH - INSTALAÇÃO
+
+Windows 10 (1809 ou posterior) ou Windows 11, processador x64.
+O instalador inclui o .NET e funciona sem internet para instalar e abrir o AG Bench.
+Aceite o pedido de administrador: os sensores precisam desse acesso.
+
+O driver oficial PawnIO 2.2.0 está incluído, com instalação opcional quando ainda
+não estiver instalado. Ele permite leituras de temperatura e consumo da CPU.
+O Windows pode pedir uma reinicialização; o instalador não reinicia sem avisar.
+O PawnIO é compartilhado com outros programas e não é removido ao desinstalar o AG Bench.
+
+O instalador não configura iluminação RGB, não instala drivers seriais ou de vídeo,
+não executa benchmarks e não aplica otimizações ao computador automaticamente.
+Essas ações continuam disponíveis nas telas do aplicativo, por escolha do usuário.
+Pacotes seriais de terceiros não estão embutidos nesta edição de distribuição;
+na aba MAKER use PÁGINA OFICIAL para baixar e aceitar os termos do fabricante.
+
+As integrações Corsair/iCUE, OpenRGB, SignalRGB, jogos e respectivos drivers
+dependem dos programas/dispositivos correspondentes. Downloads de drivers,
+catálogo online de FPS e instalação de aplicativos precisam de internet.
+
+Configurações, chaves de API e histórico ficam em %AppData%\AGBench e não fazem
+parte deste instalador. A desinstalação preserva esses dados.
+
+Licenças e origens das dependências ficam na pasta Licenses da instalação.
+O AG Bench é distribuído sob a licença MIT, mantendo os créditos do autor original.
