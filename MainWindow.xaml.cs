@@ -18,6 +18,9 @@ public partial class MainWindow : Window
     private readonly ICollectionView _view;
     private string? _category;   // filtro por chip (null = todos)
     private string _search = ""; // filtro por texto
+    private bool _systemNavCollapsed;
+    private bool _mainSidebarCollapsed;
+    private List<GeneralCardPreference> _generalCardPreferences = new();
 
     // Placa de vídeo
     private List<GpuInfo> _gpus = new();
@@ -246,6 +249,16 @@ public partial class MainWindow : Window
         => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
+    private void BtnToggleMainSidebar_Click(object sender, RoutedEventArgs e)
+    {
+        _mainSidebarCollapsed = !_mainSidebarCollapsed;
+        SideCol.Width = new GridLength(_mainSidebarCollapsed ? 60 : 256);
+        Sidebar.Margin = _mainSidebarCollapsed ? new Thickness(4, 0, 0, 14) : new Thickness(14, 0, 0, 14);
+        NavScroll.Visibility = _mainSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        SideFooter.Visibility = _mainSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        BtnToggleMainSidebar.ToolTip = _mainSidebarCollapsed ? "Expandir menu principal" : "Recolher menu principal";
+    }
+
     private void Nav_Checked(object sender, RoutedEventArgs e)
     {
         if (PageSystem == null) return; // disparado durante InitializeComponent
@@ -285,7 +298,7 @@ public partial class MainWindow : Window
 
     private void ShowPage(string name)
     {
-        foreach (var p in new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageGames, PageBottleneck, PageOverlay, PageBench, PageOptimize, PageOc, PageInteg, PageLauncher, PageDriver, PageStartup, PageApps, PageMakerPorts, PageMakerDrv, PageDisks, PageEnergy, PageNet, PageStress })
+        foreach (var p in new FrameworkElement[] { PageDash, PageSystem, PageGeneralSettings, PageSensors, PageGpu, PageGames, PageBottleneck, PageOverlay, PageBench, PageOptimize, PageOc, PageInteg, PageLauncher, PageDriver, PageStartup, PageApps, PageMakerPorts, PageMakerDrv, PageDisks, PageEnergy, PageNet, PageStress })
             p.Visibility = p.Name == name ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -295,10 +308,105 @@ public partial class MainWindow : Window
     {
         if (InfoCategories.SelectedItem is not InfoNode node) return;
         InfoTitle.Text = node.Header;
-        InfoDetails.ItemsSource = node.Children;
+        BtnGeneralCardSettings.Visibility = node.Header == "Geral" ? Visibility.Visible : Visibility.Collapsed;
+        if (node.Header == "Geral")
+        {
+            InfoDetails.ItemTemplate = (DataTemplate)FindResource("GeneralInfoTileTemplate");
+            InfoDetails.ItemsPanel = (ItemsPanelTemplate)FindResource("GeneralInfoTilesPanel");
+            InfoDetails.ItemsSource = BuildGeneralTiles(node);
+        }
+        else
+        {
+            InfoDetails.ItemTemplate = null;
+            InfoDetails.ItemsPanel = null;
+            InfoDetails.ItemsSource = node.Children;
+        }
         bool storage = node.Header == "Armazenamento";
         DrivesPanel.Visibility = storage ? Visibility.Visible : Visibility.Collapsed;
         if (storage) RefreshDrives();
+    }
+
+    private List<GeneralInfoTile> BuildGeneralTiles(InfoNode general, bool applyVisibility = true)
+    {
+        var tiles = new List<GeneralInfoTile>();
+        var keyOccurrences = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var component in general.Children)
+        {
+            void AddLeaves(InfoNode node, string context)
+            {
+                if (!node.IsGroup)
+                {
+                    string baseKey = $"{context}\u001F{node.Header}";
+                    keyOccurrences.TryGetValue(baseKey, out int occurrence);
+                    keyOccurrences[baseKey] = ++occurrence;
+                    string key = occurrence == 1 ? baseKey : $"{baseKey}\u001F{occurrence}";
+                    tiles.Add(new GeneralInfoTile(key, context, node.Header, node.Value));
+                    return;
+                }
+                string next = string.IsNullOrEmpty(context) ? node.Header : $"{context} · {node.Header}";
+                foreach (var child in node.Children) AddLeaves(child, next);
+            }
+            AddLeaves(component, "");
+        }
+        if (applyVisibility && _settings.GeneralCardsVisibility is { } visibility)
+            tiles = tiles.Where(tile => !visibility.TryGetValue(tile.Key, out bool show) || show).ToList();
+        return tiles;
+    }
+
+    private void BtnGeneralCardSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (InfoCategories.SelectedItem is not InfoNode general || general.Header != "Geral") return;
+        var saved = _settings.GeneralCardsVisibility;
+        _generalCardPreferences = BuildGeneralTiles(general, applyVisibility: false)
+            .Select(tile => new GeneralCardPreference
+            {
+                Key = tile.Key,
+                Context = tile.Context,
+                Label = tile.Label,
+                Value = tile.Value,
+                IsVisible = saved == null || !saved.TryGetValue(tile.Key, out bool visible) || visible
+            }).ToList();
+        GeneralCardPreferences.ItemsSource = _generalCardPreferences;
+        ShowPage("PageGeneralSettings");
+        TitlePage.Text = "Sistema · Personalizar cartões";
+    }
+
+    private void BtnGeneralSettingsBack_Click(object sender, RoutedEventArgs e)
+    {
+        ShowPage("PageSystem");
+        TitlePage.Text = "AG Bench · Sistema";
+    }
+
+    private void BtnGeneralSettingsSave_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.GeneralCardsVisibility = _generalCardPreferences.ToDictionary(card => card.Key, card => card.IsVisible);
+        try
+        {
+            _settings.Save();
+            if (InfoCategories.SelectedItem is InfoNode general && general.Header == "Geral")
+            {
+                InfoDetails.ItemsSource = null;
+                InfoDetails.ItemsSource = BuildGeneralTiles(general);
+            }
+            ShowPage("PageSystem");
+            TitlePage.Text = "AG Bench · Sistema";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"NÃ£o foi possÃ­vel salvar as preferÃªncias: {ex.Message}", "AG Bench",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void BtnToggleSystemNav_Click(object sender, RoutedEventArgs e)
+    {
+        _systemNavCollapsed = !_systemNavCollapsed;
+        SystemNavColumn.Width = new GridLength(_systemNavCollapsed ? 48 : 220);
+        SystemNavGap.Width = new GridLength(_systemNavCollapsed ? 14 : 24);
+        InfoCategories.Visibility = _systemNavCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        BtnToggleSystemNav.Content = _systemNavCollapsed ? "›" : "‹  Recolher";
+        BtnToggleSystemNav.ToolTip = _systemNavCollapsed ? "Expandir categorias" : "Recolher lista de categorias";
+        BtnToggleSystemNav.Padding = _systemNavCollapsed ? new Thickness(4, 8, 4, 8) : new Thickness(10, 8, 10, 8);
     }
 
     // ---------------- Unidades e dispositivos conectados ----------------
@@ -381,6 +489,17 @@ public partial class MainWindow : Window
         if (InfoCategories.ItemsSource is IEnumerable<InfoNode> cats && cats.FirstOrDefault(c => c.Header == "Armazenamento") is { } storage)
         {
             await Task.Run(() => SystemInfoCollector.RefreshDisks(storage));
+            if (cats.FirstOrDefault(c => c.Header == "Geral") is { } general && general.Children.FirstOrDefault(c => c.Header == "Armazenamento") is { } summaryStorage)
+            {
+                summaryStorage.Children.Clear();
+                foreach (var child in storage.Children)
+                {
+                    var copy = new InfoNode { Header = child.Header, Value = child.Value };
+                    foreach (var item in child.Children) copy.Children.Add(new InfoNode { Header = item.Header, Value = item.Value });
+                    summaryStorage.Children.Add(copy);
+                }
+                if (InfoCategories.SelectedItem == general) { InfoDetails.ItemsSource = null; InfoDetails.ItemsSource = BuildGeneralTiles(general); }
+            }
             if (InfoCategories.SelectedItem == storage) { InfoDetails.ItemsSource = null; InfoDetails.ItemsSource = storage.Children; }
         }
         if (DrivesPanel.IsVisible) RefreshDrives();

@@ -17,3 +17,14 @@ public class InfoNode
         return n;
     }
 }
+
+public sealed record GeneralInfoTile(string Key, string Context, string Label, string Value);
+
+public sealed class GeneralCardPreference
+{
+    public string Key { get; set; } = "";
+    public string Context { get; set; } = "";
+    public string Label { get; set; } = "";
+    public string Value { get; set; } = "";
+    public bool IsVisible { get; set; } = true;
+}

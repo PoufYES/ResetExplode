@@ -14,7 +14,22 @@ public static class SystemInfoCollector
         Safe(roots, "Memória RAM", CollectRam);
         Safe(roots, "Placa de vídeo", CollectGpu);
         Safe(roots, "Armazenamento", CollectDisks);
+        // Resumo para a aba Geral: mantém os mesmos dados detalhados sem duplicar consultas WMI.
+        var general = new InfoNode { Header = "Geral" };
+        foreach (var title in new[] { "Processador", "Memória RAM", "Placa de vídeo", "Armazenamento" })
+        {
+            var source = roots.FirstOrDefault(x => x.Header == title);
+            if (source != null) general.Children.Add(Clone(source));
+        }
+        roots.Insert(0, general);
         return roots;
+    }
+
+    private static InfoNode Clone(InfoNode source)
+    {
+        var copy = new InfoNode { Header = source.Header, Value = source.Value };
+        foreach (var child in source.Children) copy.Children.Add(Clone(child));
+        return copy;
     }
 
     private static void Safe(List<InfoNode> roots, string title, Action<InfoNode> fill)

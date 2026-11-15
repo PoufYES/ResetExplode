@@ -99,6 +99,9 @@ public sealed class AppSettings
     /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
     public List<string>? OverlayItems { get; set; }
 
+    /// <summary>Visibilidade individual dos cartões da subaba Sistema > Geral; chaves ausentes usam o padrão visível.</summary>
+    public Dictionary<string, bool>? GeneralCardsVisibility { get; set; }
+
     [System.Text.Json.Serialization.JsonIgnore] // nunca gravar a chave em texto puro
     public string? HowManyFpsKey
     {

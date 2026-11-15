@@ -27,10 +27,12 @@
                         <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap"/>
                     </Grid>
                 </Border>
-                <StackPanel x:Name="group" Visibility="Collapsed" Margin="0,26,0,0">
-                    <TextBlock Text="{Binding Header}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <ItemsControl ItemsSource="{Binding Children}"/>
-                </StackPanel>
+                <Border x:Name="group" Visibility="Collapsed" Style="{StaticResource CardBorder}" Margin="0,10,10,4" Padding="18,14,18,10">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Header}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ItemsControl ItemsSource="{Binding Children}"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsGroup}" Value="True">
@@ -41,6 +43,34 @@
         </DataTemplate>
 
         <!-- Placa de vídeo: campo (rótulo em cima, valor embaixo) e seção em cartão com 3 colunas -->
+        <DataTemplate x:Key="GeneralInfoTileTemplate" DataType="{x:Type local:GeneralInfoTile}">
+            <Border Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                    CornerRadius="8" Padding="9,7" Margin="3" Width="194">
+                <StackPanel>
+                    <TextBlock Text="{Binding Context}" Foreground="{DynamicResource Faint}" FontSize="10"
+                               TextTrimming="CharacterEllipsis" ToolTip="{Binding Context}"/>
+                    <TextBlock Text="{Binding Label}" Foreground="{DynamicResource Muted}" FontSize="11"
+                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                    <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="SemiBold"
+                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="GeneralInfoTilesPanel"><WrapPanel/></ItemsPanelTemplate>
+        <DataTemplate x:Key="GeneralCardPreferenceTemplate" DataType="{x:Type local:GeneralCardPreference}">
+            <Border Style="{StaticResource CardBorder}" Padding="12,10" Margin="0,0,10,10">
+                <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalContentAlignment="Center">
+                    <StackPanel Margin="6,0,0,0">
+                        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding Context}" Foreground="{DynamicResource Muted}" FontSize="11"
+                                   TextWrapping="Wrap" Margin="0,3,0,0"/>
+                        <TextBlock Text="{Binding Value}" Foreground="{DynamicResource Faint}" FontSize="11"
+                                   TextWrapping="Wrap" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </CheckBox>
+            </Border>
+        </DataTemplate>
+
         <DataTemplate x:Key="GpuTile">
             <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,10,18,10">
                 <StackPanel>
@@ -138,7 +168,11 @@
                     BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="20">
                 <DockPanel>
                     <!-- Rodapé: aviso de sensores + leitura ao vivo compacta -->
-                    <StackPanel DockPanel.Dock="Bottom" Margin="16,6,16,16">
+                    <Button x:Name="BtnToggleMainSidebar" DockPanel.Dock="Top" Style="{StaticResource CaptionButton}"
+                            Width="40" Height="38" Margin="0,4,0,2" HorizontalAlignment="Center"
+                            Content="&#xE700;" FontSize="16" Click="BtnToggleMainSidebar_Click"
+                            ToolTip="Recolher menu principal"/>
+                    <StackPanel x:Name="SideFooter" DockPanel.Dock="Bottom" Margin="16,6,16,16">
                         <Border x:Name="CpuSensorWarn" Visibility="Collapsed" BorderBrush="{DynamicResource Fg}" BorderThickness="1"
                                 CornerRadius="12" Padding="12,10" Margin="0,0,0,12">
                             <StackPanel>
@@ -590,22 +624,37 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="220"/>
-                            <ColumnDefinition Width="24"/>
+                            <ColumnDefinition x:Name="SystemNavColumn" Width="220"/>
+                            <ColumnDefinition x:Name="SystemNavGap" Width="24"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ListBox x:Name="InfoCategories" ItemContainerStyle="{StaticResource ListNavItem}"
-                                 SelectionChanged="InfoCategories_Changed">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Header}"/>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Button x:Name="BtnToggleSystemNav" Style="{StaticResource OutlineButton}" Content="‹  Recolher"
+                                    Padding="10,8" Margin="0,0,0,10" HorizontalAlignment="Stretch"
+                                    Click="BtnToggleSystemNav_Click" ToolTip="Recolher lista de categorias"/>
+                            <ListBox x:Name="InfoCategories" Grid.Row="1" ItemContainerStyle="{StaticResource ListNavItem}"
+                                     SelectionChanged="InfoCategories_Changed">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Header}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
                         <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="26,8,26,22">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <TextBlock x:Name="InfoTitle" FontSize="20" FontWeight="SemiBold" Margin="0,16,0,8"/>
+                                    <Grid Margin="0,12,0,4">
+                                        <TextBlock x:Name="InfoTitle" FontSize="20" FontWeight="SemiBold" Margin="0,4,50,4" VerticalAlignment="Center"/>
+                                        <Button x:Name="BtnGeneralCardSettings" Style="{StaticResource CaptionButton}" Content="&#xE713;"
+                                                FontSize="16" Foreground="{DynamicResource Fg}" HorizontalAlignment="Right"
+                                                Click="BtnGeneralCardSettings_Click" Visibility="Collapsed"
+                                                ToolTip="Personalizar cartões da aba Geral"/>
+                                    </Grid>
 
                                     <!-- Unidades (só em Armazenamento): anel de cheio/vazio por letra -->
                                     <StackPanel x:Name="DrivesPanel" Visibility="Collapsed" Margin="0,4,0,8">
@@ -656,6 +705,31 @@
                 </Grid>
 
                 <!-- ===== DISCOS (saúde) ===== -->
+                <ScrollViewer x:Name="PageGeneralSettings" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="36,30,36,30">
+                        <Grid Margin="0,0,0,22">
+                            <StackPanel Margin="0,0,230,0">
+                                <TextBlock Text="Personalizar cartões" Style="{StaticResource H1}"/>
+                                <TextBlock Text="Escolha individualmente quais informações aparecem em Sistema &gt; Geral."
+                                           Style="{StaticResource Sub}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <Button Style="{StaticResource OutlineButton}" Content="VOLTAR" Padding="16,9" Margin="0,0,8,0"
+                                        Click="BtnGeneralSettingsBack_Click"/>
+                                <Button Style="{StaticResource PrimaryButton}" Content="SALVAR" Padding="18,9"
+                                        Click="BtnGeneralSettingsSave_Click"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="Desmarque os cartões que deseja ocultar. As alterações só entram em vigor depois de salvar."
+                                   Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                        <ItemsControl x:Name="GeneralCardPreferences" ItemTemplate="{StaticResource GeneralCardPreferenceTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
                 <ScrollViewer x:Name="PageDisks" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="36,30,36,30">
                         <Grid Margin="0,0,0,20">
